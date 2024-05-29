@@ -1,0 +1,15 @@
+{
+    "autoload": {
+        "psr-4": {
+            "PerfectApp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PerfectApp\\Tests\\": "tests"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11"
+    }
+}
