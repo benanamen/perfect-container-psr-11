@@ -12,7 +12,7 @@ class Container implements ContainerInterface
     private array $entries = [];
     private mixed $autowiring;
 
-    public function __construct($autowiring = false)
+    public function __construct(bool $autowiring = true)
     {
         $this->autowiring = $autowiring;
     }
@@ -64,12 +64,12 @@ class Container implements ContainerInterface
         return array_key_exists($id, $this->entries);
     }
 
-    public function set($id, $concrete): void
+    public function set(string $id, $concrete): void
     {
         $this->entries[$id] = $concrete;
     }
 
-    public function bind($id, $concrete): void
+    public function bind(string $id, $concrete): void
     {
         $this->set($id, $concrete);
     }

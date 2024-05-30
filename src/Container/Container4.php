@@ -1,5 +1,5 @@
 <?php declare(strict_types=1);
-//Version 4.1 Working in Perfect Storage - Was missing Closure import
+
 namespace PerfectApp\Container;
 
 use Closure;
@@ -9,18 +9,37 @@ use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionParameter;
 
+/**
+ * Formerly Dev Version 4.1 Working in Perfect Storage - Was missing Closure import
+ */
 class Container4 implements PsrContainerInterface
 {
+    /**
+     * @var array
+     */
     private array $entries = [];
+    /**
+     * @var bool
+     */
     private bool $autowiring;
 
+    /**
+     * @param bool $autowiring
+     */
     public function __construct(bool $autowiring = true)
     {
         $this->autowiring = $autowiring;
     }
 
-    public function get(string $id)
+    /**
+     * @param string $id
+     * @return mixed|object|string|null
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function get(string $id): mixed
     {
         if ($this->has($id)) {
             $entry = $this->entries[$id];
@@ -39,14 +58,33 @@ class Container4 implements PsrContainerInterface
         };
     }
 
+    /**
+     * @param string $id
+     * @return bool
+     */
     public function has(string $id): bool
     {
         return isset($this->entries[$id]);
     }
 
-    public function bind(string $id, $concrete): void
+    /**
+     * @param string $id
+     * @param mixed $concrete
+     * @return void
+     */
+    public function set(string $id, mixed $concrete): void
     {
         $this->entries[$id] = $concrete;
+    }
+
+    /**
+     * @param string $id
+     * @param mixed $concrete
+     * @return void
+     */
+    public function bind(string $id, mixed $concrete): void
+    {
+        $this->set($id, $concrete);
     }
 
     /**
@@ -79,7 +117,7 @@ class Container4 implements PsrContainerInterface
                         $parameters[] = $parameter->getDefaultValue();
                     } else {
                         throw new class($id, $parameter) extends Exception implements ContainerExceptionInterface {
-                            public function __construct($id, $parameter)
+                            public function __construct(string $id, ReflectionParameter $parameter)
                             {
                                 parent::__construct("Cannot resolve parameter \${$parameter->getName()} for $id.");
                             }
@@ -93,7 +131,7 @@ class Container4 implements PsrContainerInterface
             return $reflector->newInstanceArgs($parameters);
         } catch (ReflectionException $e) {
             throw new class($id, $e) extends Exception implements ContainerExceptionInterface {
-                public function __construct($id, $previous)
+                public function __construct(string $id, ReflectionException $previous)
                 {
                     parent::__construct("Error while resolving $id: " . $previous->getMessage(), 0, $previous);
                 }
