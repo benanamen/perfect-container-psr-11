@@ -1,32 +1,32 @@
 <?php declare(strict_types=1);
 
-
 namespace PerfectApp\Tests;
 
-
 use Exception;
-
 use PerfectApp\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use ReflectionException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 #[CoversClass(Container::class)]
 class ContainerTest extends TestCase
 {
     /**
-     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetWithoutAutowiring()
     {
         $container = new Container(false);
-        $container->set('foo', 'bar');
+        $container->bind('foo', 'bar');
 
         $this->assertEquals('bar', $container->get('foo'));
     }
 
     /**
-     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetWithAutowiring()
     {
@@ -38,7 +38,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetWithDependencyAutowiring()
     {
@@ -50,7 +51,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetWithBindAlias()
     {
@@ -61,7 +63,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetNotFound()
     {
@@ -70,24 +73,34 @@ class ContainerTest extends TestCase
         $container->get('nonexistent');
     }
 
-
-
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function testGetNonInstantiableClass()
     {
         $container = new Container(true);
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Class PerfectApp\Tests\AbstractClass is not instantiable.');
         $container->get(AbstractClass::class);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function testGetWithMissingRequiredParameter()
     {
         $container = new Container(true);
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage('Cannot resolve parameter $missingParam for PerfectApp\Tests\ClassWithRequiredParameter.');
         $container->get(ClassWithRequiredParameter::class);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function testGetWithDefaultParameterValue()
     {
         $container = new Container(true);
@@ -95,40 +108,19 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(ClassWithDefaultParameter::class, $instance);
         $this->assertEquals(42, $instance->defaultParam);
     }
-}
 
-class SampleClass
-{
-    public string $prop = 'Hello';
-}
-
-class ServiceClass
-{
-    public SampleClass $dependency;
-
-    public function __construct(SampleClass $dependency)
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function testGetWithReflectionException()
     {
-        $this->dependency = $dependency;
-    }
-}
+        $container = new Container(true); // Adjust the namespace and class name as needed
+        $nonExistentClass = 'NonExistentClass';
 
-abstract class AbstractClass
-{
-}
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage("Error while resolving $nonExistentClass");
 
-class ClassWithRequiredParameter
-{
-    public function __construct($missingParam)
-    {
-    }
-}
-
-class ClassWithDefaultParameter
-{
-    public $defaultParam;
-
-    public function __construct($defaultParam = 42)
-    {
-        $this->defaultParam = $defaultParam;
+        $container->get($nonExistentClass);
     }
 }

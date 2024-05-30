@@ -4,24 +4,42 @@ namespace PerfectApp\Container;
 
 use Closure;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface as PsrContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionParameter;
 
-class Container implements ContainerInterface
+/**
+ * Formerly Dev Version 4.1 Working in Perfect Storage - Was missing Closure import
+ */
+class Container implements PsrContainerInterface
 {
+    /**
+     * @var array
+     */
     private array $entries = [];
-    private mixed $autowiring;
+    /**
+     * @var bool
+     */
+    private bool $autowiring;
 
+    /**
+     * @param bool $autowiring
+     */
     public function __construct(bool $autowiring = true)
     {
         $this->autowiring = $autowiring;
     }
 
     /**
-     * @throws ReflectionException
-     * @throws Exception
+     * @param string $id
+     * @return mixed|object|string|null
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function get($id)
+    public function get(string $id): mixed
     {
         if ($this->has($id)) {
             $entry = $this->entries[$id];
@@ -29,48 +47,95 @@ class Container implements ContainerInterface
         }
 
         if ($this->autowiring) {
-            $reflector = new ReflectionClass($id);
-            if (!$reflector->isInstantiable()) {
-                throw new Exception("Class $id is not instantiable.");
-            }
-
-            $constructor = $reflector->getConstructor();
-            if ($constructor === null) {
-                return new $id;
-            }
-
-            $parameters = [];
-            foreach ($constructor->getParameters() as $parameter) {
-                $class = $parameter->getType();
-                if ($class === null) {
-                    if ($parameter->isDefaultValueAvailable()) {
-                        $parameters[] = $parameter->getDefaultValue();
-                    } else {
-                        throw new Exception("Cannot resolve parameter \${$parameter->getName()} for $id.");
-                    }
-                } else {
-                    $parameters[] = $this->get($class->getName());
-                }
-            }
-
-            return $reflector->newInstanceArgs($parameters);
+            return $this->build($id);
         }
 
-        throw new Exception("Entry $id not found in the container.");
+        throw new class($id) extends Exception implements NotFoundExceptionInterface {
+            public function __construct($id)
+            {
+                parent::__construct("Entry $id not found in the container.");
+            }
+        };
     }
 
-    public function has($id): bool
+    /**
+     * @param string $id
+     * @return bool
+     */
+    public function has(string $id): bool
     {
-        return array_key_exists($id, $this->entries);
+        return isset($this->entries[$id]);
     }
 
-    public function set(string $id, $concrete): void
+    /**
+     * @param string $id
+     * @param mixed $concrete
+     * @return void
+     */
+    public function set(string $id, mixed $concrete): void
     {
         $this->entries[$id] = $concrete;
     }
 
-    public function bind(string $id, $concrete): void
+    /**
+     * @param string $id
+     * @param mixed $concrete
+     * @return void
+     */
+    public function bind(string $id, mixed $concrete): void
     {
         $this->set($id, $concrete);
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function build(string $id)
+    {
+        try {
+            $reflector = new ReflectionClass($id);
+            if (!$reflector->isInstantiable()) {
+                throw new class($id) extends Exception implements ContainerExceptionInterface {
+                    public function __construct($id)
+                    {
+                        parent::__construct("Class $id is not instantiable.");
+                    }
+                };
+            }
+
+            $constructor = $reflector->getConstructor();
+            if ($constructor === null) {
+                return new $id();
+            }
+
+            $parameters = [];
+            foreach ($constructor->getParameters() as $parameter) {
+                $type = $parameter->getType();
+                if ($type === null || $type->isBuiltin()) {
+                    if ($parameter->isDefaultValueAvailable()) {
+                        $parameters[] = $parameter->getDefaultValue();
+                    } else {
+                        throw new class($id, $parameter) extends Exception implements ContainerExceptionInterface {
+                            public function __construct(string $id, ReflectionParameter $parameter)
+                            {
+                                parent::__construct("Cannot resolve parameter \${$parameter->getName()} for $id.");
+                            }
+                        };
+                    }
+                } else {
+                    $parameters[] = $this->get($type->getName());
+                }
+            }
+
+            return $reflector->newInstanceArgs($parameters);
+        } catch (ReflectionException $e) {
+            throw new class($id, $e) extends Exception implements ContainerExceptionInterface {
+                public function __construct(string $id, ReflectionException $previous)
+                {
+                    parent::__construct("Error while resolving $id: " . $previous->getMessage(), 0, $previous);
+                }
+            };
+        }
     }
 }
