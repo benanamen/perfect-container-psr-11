@@ -1,4 +1,6 @@
 {
+    "name": "benanamen/perfect-container-psr-11",
+    "description": "A perfect PSR-11 container implementation",
     "autoload": {
         "psr-4": {
             "PerfectApp\\": "src/"
