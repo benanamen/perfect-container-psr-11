@@ -5,5 +5,5 @@ namespace PerfectApp\Tests;
 
 interface LoggerInterface
 {
-    public function log(string $message);
+    public function log(string $message): void;
 }

@@ -1,13 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace PerfectApp\Tests;
 
 class TestFileLogger implements LoggerInterface
 {
-    public function log(string $message): string
+    public function log(string $message): void
     {
-        // Simple implementation for testing
-        return "Logged: $message";
+        file_put_contents('test.log', $message . PHP_EOL, FILE_APPEND);
     }
 }

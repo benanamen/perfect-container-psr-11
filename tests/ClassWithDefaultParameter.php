@@ -6,7 +6,7 @@ class ClassWithDefaultParameter
 {
     public mixed $defaultParam;
 
-    public function __construct($defaultParam = 42)
+    public function __construct(mixed $defaultParam = 42)
     {
         $this->defaultParam = $defaultParam;
     }

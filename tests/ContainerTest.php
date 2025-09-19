@@ -3,22 +3,14 @@
 namespace PerfectApp\Tests;
 
 use Exception;
-use FileLogger;
-use LoggerInterface;
 use PerfectApp\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 
 #[CoversClass(Container::class)]
 class ContainerTest extends TestCase
 {
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithoutAutowiring()
+    public function testGetWithoutAutowiring(): void
     {
         $container = new Container(false);
         $container->set('foo', 'bar');
@@ -26,11 +18,7 @@ class ContainerTest extends TestCase
         $this->assertEquals('bar', $container->get('foo'));
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithAutowiring()
+    public function testGetWithAutowiring(): void
     {
         $container = new Container(true);
 
@@ -39,11 +27,7 @@ class ContainerTest extends TestCase
         $this->assertEquals('Hello', $instance->prop);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithDependencyAutowiring()
+    public function testGetWithDependencyAutowiring(): void
     {
         $container = new Container(true);
 
@@ -52,11 +36,7 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(SampleClass::class, $service->dependency);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithInterfaceBinding()
+    public function testGetWithInterfaceBinding(): void
     {
         $container = new Container(true);
         $container->set(LoggerInterface::class, TestFileLogger::class);
@@ -65,11 +45,7 @@ class ContainerTest extends TestCase
         $this->assertInstanceOf(TestFileLogger::class, $logger);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithStringValue()
+    public function testGetWithStringValue(): void
     {
         $container = new Container(false);
         $container->set('version', '1.0.0');
@@ -77,14 +53,10 @@ class ContainerTest extends TestCase
         $this->assertEquals('1.0.0', $container->get('version'));
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithClosureFactory()
+    public function testGetWithClosureFactory(): void
     {
         $container = new Container(false);
-        $container->set('timestamp', function () {
+        $container->set('timestamp', function (): int {
             return time();
         });
 
@@ -92,11 +64,7 @@ class ContainerTest extends TestCase
         $this->assertIsInt($timestamp);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetNotFound()
+    public function testGetNotFound(): void
     {
         $container = new Container(false);
         $this->expectException(Exception::class);
@@ -104,11 +72,7 @@ class ContainerTest extends TestCase
         $container->get('nonexistent');
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetNonInstantiableClass()
+    public function testGetNonInstantiableClass(): void
     {
         $container = new Container(true);
         $this->expectException(Exception::class);
@@ -116,11 +80,7 @@ class ContainerTest extends TestCase
         $container->get(AbstractClass::class);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithMissingRequiredParameter()
+    public function testGetWithMissingRequiredParameter(): void
     {
         $container = new Container(true);
         $this->expectException(Exception::class);
@@ -128,11 +88,7 @@ class ContainerTest extends TestCase
         $container->get(ClassWithRequiredParameter::class);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithDefaultParameterValue()
+    public function testGetWithDefaultParameterValue(): void
     {
         $container = new Container(true);
         $instance = $container->get(ClassWithDefaultParameter::class);
@@ -140,11 +96,7 @@ class ContainerTest extends TestCase
         $this->assertEquals(42, $instance->defaultParam);
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithReflectionException()
+    public function testGetWithReflectionException(): void
     {
         $container = new Container(true);
         $nonExistentClass = 'NonExistentClass';
@@ -155,9 +107,7 @@ class ContainerTest extends TestCase
         $container->get($nonExistentClass);
     }
 
-    /**
-     */
-    public function testHasReturnsTrueForRegisteredEntry()
+    public function testHasReturnsTrueForRegisteredEntry(): void
     {
         $container = new Container(false);
         $container->set('test_key', 'test_value');
@@ -165,24 +115,16 @@ class ContainerTest extends TestCase
         $this->assertTrue($container->has('test_key'));
     }
 
-    /**
-     */
-    public function testHasReturnsFalseForUnregisteredEntry()
+    public function testHasReturnsFalseForUnregisteredEntry(): void
     {
         $container = new Container(false);
 
         $this->assertFalse($container->has('nonexistent_key'));
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function testGetWithClassNameString()
+    public function testGetWithClassNameString(): void
     {
         $container = new Container(false);
-
-        // This tests the new logic: is_string($entry) && class_exists($entry)
         $container->set('sample_class', SampleClass::class);
 
         $instance = $container->get('sample_class');

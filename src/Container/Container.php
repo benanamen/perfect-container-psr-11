@@ -9,36 +9,26 @@ use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
-use ReflectionParameter;
+use ReflectionNamedType;
+use Throwable;
 
 /**
- * A simple PSR-11 compliant dependency injection container with autowiring support.
+ * PSR-11 Container implementation with autowiring support
  */
 class Container implements PsrContainerInterface
 {
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     private array $entries = [];
-    /**
-     * @var bool
-     */
+
     private bool $autowiring;
 
-    /**
-     * @param bool $autowiring
-     */
     public function __construct(bool $autowiring = true)
     {
         $this->autowiring = $autowiring;
     }
 
-    /**
-     * @param string $id
-     * @return mixed|object|string|null
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     public function get(string $id): mixed
     {
         if ($this->has($id)) {
@@ -62,46 +52,49 @@ class Container implements PsrContainerInterface
             return $this->build($id);
         }
 
-        throw new class($id) extends Exception implements NotFoundExceptionInterface {
-            public function __construct($id)
+        throw new class("Entry $id not found in the container.") extends Exception implements NotFoundExceptionInterface {
+            public function __construct(string $message)
             {
-                parent::__construct("Entry $id not found in the container.");
+                parent::__construct($message);
             }
         };
     }
 
-    /**
-     * @param string $id
-     * @return bool
-     */
     public function has(string $id): bool
     {
         return isset($this->entries[$id]);
     }
 
-    /**
-     * @param string $id
-     * @param mixed $concrete
-     * @return void
-     */
     public function set(string $id, mixed $concrete): void
     {
         $this->entries[$id] = $concrete;
     }
 
     /**
+     * @param string $id
+     * @return object
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    private function build(string $id)
+    private function build(string $id): object
     {
         try {
+            // Check if the string is a valid class before creating ReflectionClass
+            if (!class_exists($id)) {
+                throw new class("Class $id does not exist.") extends Exception implements ContainerExceptionInterface {
+                    public function __construct(string $message)
+                    {
+                        parent::__construct($message);
+                    }
+                };
+            }
+
             $reflector = new ReflectionClass($id);
             if (!$reflector->isInstantiable()) {
-                throw new class($id) extends Exception implements ContainerExceptionInterface {
-                    public function __construct($id)
+                throw new class("Class $id is not instantiable.") extends Exception implements ContainerExceptionInterface {
+                    public function __construct(string $message)
                     {
-                        parent::__construct("Class $id is not instantiable.");
+                        parent::__construct($message);
                     }
                 };
             }
@@ -114,28 +107,37 @@ class Container implements PsrContainerInterface
             $parameters = [];
             foreach ($constructor->getParameters() as $parameter) {
                 $type = $parameter->getType();
-                if ($type === null || $type->isBuiltin()) {
+                if ($type === null || ($type instanceof ReflectionNamedType && $type->isBuiltin())) {
                     if ($parameter->isDefaultValueAvailable()) {
                         $parameters[] = $parameter->getDefaultValue();
                     } else {
-                        throw new class($id, $parameter) extends Exception implements ContainerExceptionInterface {
-                            public function __construct(string $id, ReflectionParameter $parameter)
+                        throw new class("Cannot resolve parameter \${$parameter->getName()} for $id.") extends Exception implements ContainerExceptionInterface {
+                            public function __construct(string $message)
                             {
-                                parent::__construct("Cannot resolve parameter \${$parameter->getName()} for $id.");
+                                parent::__construct($message);
                             }
                         };
                     }
                 } else {
-                    $parameters[] = $this->get($type->getName());
+                    if ($type instanceof ReflectionNamedType) {
+                        $parameters[] = $this->get($type->getName());
+                    } else {
+                        throw new class("Union types are not supported for parameter \${$parameter->getName()} in $id.") extends Exception implements ContainerExceptionInterface {
+                            public function __construct(string $message)
+                            {
+                                parent::__construct($message);
+                            }
+                        };
+                    }
                 }
             }
 
             return $reflector->newInstanceArgs($parameters);
         } catch (ReflectionException $e) {
-            throw new class($id, $e) extends Exception implements ContainerExceptionInterface {
-                public function __construct(string $id, ReflectionException $previous)
+            throw new class("Error while resolving $id: " . $e->getMessage(), 0, $e) extends Exception implements ContainerExceptionInterface {
+                public function __construct(string $message, int $code, Throwable $previous)
                 {
-                    parent::__construct("Error while resolving $id: " . $previous->getMessage(), 0, $previous);
+                    parent::__construct($message, $code, $previous);
                 }
             };
         }
