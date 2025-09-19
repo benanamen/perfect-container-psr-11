@@ -1,20 +1,37 @@
 {
-    "name": "benanamen/perfect-container-psr-11",
-    "description": "A perfect PSR-11 container implementation",
-    "autoload": {
-        "psr-4": {
-            "PerfectApp\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "PerfectApp\\Tests\\": "tests"
-        }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^11"
-    },
-    "require": {
-        "psr/container": "^2.0"
+  "name": "benanamen/perfect-container-psr-11",
+  "description": "A perfect PSR-11 container implementation",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Kevin Rubio"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "PerfectApp\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PerfectApp\\Tests\\": "tests"
+    }
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.87",
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^12.0"
+  },
+  "require": {
+    "php": "^8.3",
+    "psr/container": "^2.0"
+  },
+  "scripts": {
+    "test": "phpunit",
+    "test-coverage": "phpunit --coverage-html coverage --coverage-clover coverage/clover.xml",
+    "check-style": "php-cs-fixer fix --dry-run --diff src",
+    "fix-style": "php-cs-fixer fix src",
+    "analyse": "phpstan analyse"
+  }
 }

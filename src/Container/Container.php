@@ -12,7 +12,7 @@ use ReflectionException;
 use ReflectionParameter;
 
 /**
- * Formerly Dev Version 4.1 Working in Perfect Storage - Was missing Closure import
+ * A simple PSR-11 compliant dependency injection container with autowiring support.
  */
 class Container implements PsrContainerInterface
 {
@@ -43,7 +43,19 @@ class Container implements PsrContainerInterface
     {
         if ($this->has($id)) {
             $entry = $this->entries[$id];
-            return $entry instanceof Closure ? $entry($this) : $entry;
+
+            // 1. If it's a Closure (factory), call it
+            if ($entry instanceof Closure) {
+                return $entry($this);
+            }
+            // 2. If it's a string that represents a valid class, build it
+            elseif (is_string($entry) && class_exists($entry)) {
+                return $this->build($entry);
+            }
+            // 3. Return anything else as-is (objects, simple values, etc.)
+            else {
+                return $entry;
+            }
         }
 
         if ($this->autowiring) {
@@ -75,16 +87,6 @@ class Container implements PsrContainerInterface
     public function set(string $id, mixed $concrete): void
     {
         $this->entries[$id] = $concrete;
-    }
-
-    /**
-     * @param string $id
-     * @param mixed $concrete
-     * @return void
-     */
-    public function bind(string $id, mixed $concrete): void
-    {
-        $this->set($id, $concrete);
     }
 
     /**
