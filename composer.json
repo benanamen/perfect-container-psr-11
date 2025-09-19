@@ -1,6 +1,6 @@
 {
   "name": "benanamen/perfect-container-psr-11",
-  "description": "A perfect PSR-11 container implementation",
+  "description": "A PSR-11 dependency injection container with autowiring support",
   "type": "library",
   "license": "MIT",
   "authors": [

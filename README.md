@@ -1,3 +1,16 @@
+![PHPStan](https://img.shields.io/badge/PHPStan-Level%2010-brightgreen.svg)
+![PHPUnit](https://img.shields.io/badge/PHPUnit-100%25-brightgreen.svg)
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-blue.svg)
+![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
+
+## Quality Assurance
+
+- ✅ **100% Test Coverage** with PHPUnit 12
+- 📊 **PHPStan Level 10** - Maximum static analysis quality
+- 🚀 **Zero Dependencies** - Pure PHP implementation
+- 🎯 **PHP 8.3+** with strict types and modern features
+- 🛡️ **Exception-Based Error Handling** for robust security
+
 ## Features
 
 - **PSR-11 Compliant**: Full implementation of `Psr\Container\ContainerInterface`
