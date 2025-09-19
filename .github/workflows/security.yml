@@ -1,0 +1,33 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron: '0 2 * * 0' # Weekly at 2 AM
+
+jobs:
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run security check
+        run: composer require --dev enlightn/security-checker && vendor/bin/security-checker security:check
+
+      - name: Run local-php-security-checker
+        uses: symfonycorp/security-checker-action@v4

@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --no-dev
+
+      - name: Run tests
+        run: composer test
+
+      - name: Create PHAR archive
+        run: |
+          composer require --dev box-project/box
+          vendor/bin/box compile
+
+      - name: Upload PHAR to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/auth-library.phar
+          asset_name: auth-library.phar
+          tag: ${{ github.ref }}
+
+  publish:
+    name: Publish to Packagist
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    steps:
+      - name: Trigger Packagist update
+        run: |
+          curl -X POST https://packagist.org/api/update-package?username=benanamen&apiToken=b98e9eaf188d2cccbcfcbc93960068f5be350352 \
+            -d '{"repository":{"url":"https://github.com/${{ github.repository }}"}}'
+        env:
+          YOUR_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          YOUR_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
