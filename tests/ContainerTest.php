@@ -6,6 +6,7 @@ use Exception;
 use PerfectApp\Container\Container;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use ReflectionException;
 
 #[CoversClass(Container::class)]
 class ContainerTest extends TestCase
@@ -99,12 +100,34 @@ class ContainerTest extends TestCase
     public function testGetWithReflectionException(): void
     {
         $container = new Container(true);
-        $nonExistentClass = 'NonExistentClass';
+
+        // Use a class name with invalid characters that will cause ReflectionException
+        $invalidClass = 'Invalid@Class#Name';
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Error while resolving $nonExistentClass");
+        $this->expectExceptionMessage('Error while resolving ' . $invalidClass);
 
-        $container->get($nonExistentClass);
+        $container->get($invalidClass);
+    }
+
+    public function testGetWithReflectionExceptionWrapsPrevious(): void
+    {
+        $container = new Container(true);
+
+        // Use a class name with invalid characters that will cause ReflectionException
+        $invalidClass = 'Invalid@Class#Name$With%Special^Chars';
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Error while resolving ' . $invalidClass);
+
+        try {
+            $container->get($invalidClass);
+        } catch (Exception $e) {
+            // Verify it has a previous ReflectionException
+            $this->assertNotNull($e->getPrevious(), 'Exception should have a previous exception');
+            $this->assertInstanceOf(ReflectionException::class, $e->getPrevious());
+            throw $e;
+        }
     }
 
     public function testHasReturnsTrueForRegisteredEntry(): void
@@ -130,5 +153,15 @@ class ContainerTest extends TestCase
         $instance = $container->get('sample_class');
         $this->assertInstanceOf(SampleClass::class, $instance);
         $this->assertEquals('Hello', $instance->prop);
+    }
+
+    public function testGetWithUnionTypeParameter(): void
+    {
+        $container = new Container(true);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Union types are not supported for parameter $param in PerfectApp\Tests\ClassWithUnionType.');
+
+        $container->get(ClassWithUnionType::class);
     }
 }

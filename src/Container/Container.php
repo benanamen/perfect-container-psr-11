@@ -81,17 +81,10 @@ class Container implements PsrContainerInterface
     private function build(string $id): object
     {
         try {
-            // Check if the string is a valid class before creating ReflectionClass
-            if (!class_exists($id)) {
-                throw new class ("Class $id does not exist.") extends Exception implements ContainerExceptionInterface {
-                    public function __construct(string $message)
-                    {
-                        parent::__construct($message);
-                    }
-                };
-            }
-
+            // Try to create ReflectionClass first to catch invalid class names
+            // This will trigger ReflectionException for non-existent classes
             $reflector = new ReflectionClass($id);
+
             if (!$reflector->isInstantiable()) {
                 throw new class ("Class $id is not instantiable.") extends Exception implements ContainerExceptionInterface {
                     public function __construct(string $message)
@@ -136,7 +129,8 @@ class Container implements PsrContainerInterface
 
             return $reflector->newInstanceArgs($parameters);
         } catch (ReflectionException $e) {
-            throw new class ("Error while resolving $id: " . $e->getMessage(), 0, $e) extends Exception implements ContainerExceptionInterface {
+            // This will catch ReflectionException from invalid class names and other reflection issues
+            throw new class ("Error while resolving $id", 0, $e) extends Exception implements ContainerExceptionInterface {
                 public function __construct(string $message, int $code, Throwable $previous)
                 {
                     parent::__construct($message, $code, $previous);
