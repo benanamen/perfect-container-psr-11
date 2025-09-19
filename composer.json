@@ -1,5 +1,5 @@
 {
-  "name": "benanamen/perfect-container-psr-11",
+  "name": "krubio/perfect-container-psr-11",
   "description": "A PSR-11 dependency injection container with autowiring support",
   "type": "library",
   "license": "MIT",
