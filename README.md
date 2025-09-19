@@ -25,7 +25,7 @@
 ## Installation
 
 ```bash
-  composer require perfectapp/perfect-container
+  composer require perfectapp//perfect-container-psr-11
 ```
 
 ---
