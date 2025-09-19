@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace PerfectApp\Container;
 
@@ -52,7 +54,7 @@ class Container implements PsrContainerInterface
             return $this->build($id);
         }
 
-        throw new class("Entry $id not found in the container.") extends Exception implements NotFoundExceptionInterface {
+        throw new class ("Entry $id not found in the container.") extends Exception implements NotFoundExceptionInterface {
             public function __construct(string $message)
             {
                 parent::__construct($message);
@@ -81,7 +83,7 @@ class Container implements PsrContainerInterface
         try {
             // Check if the string is a valid class before creating ReflectionClass
             if (!class_exists($id)) {
-                throw new class("Class $id does not exist.") extends Exception implements ContainerExceptionInterface {
+                throw new class ("Class $id does not exist.") extends Exception implements ContainerExceptionInterface {
                     public function __construct(string $message)
                     {
                         parent::__construct($message);
@@ -91,7 +93,7 @@ class Container implements PsrContainerInterface
 
             $reflector = new ReflectionClass($id);
             if (!$reflector->isInstantiable()) {
-                throw new class("Class $id is not instantiable.") extends Exception implements ContainerExceptionInterface {
+                throw new class ("Class $id is not instantiable.") extends Exception implements ContainerExceptionInterface {
                     public function __construct(string $message)
                     {
                         parent::__construct($message);
@@ -111,7 +113,7 @@ class Container implements PsrContainerInterface
                     if ($parameter->isDefaultValueAvailable()) {
                         $parameters[] = $parameter->getDefaultValue();
                     } else {
-                        throw new class("Cannot resolve parameter \${$parameter->getName()} for $id.") extends Exception implements ContainerExceptionInterface {
+                        throw new class ("Cannot resolve parameter \${$parameter->getName()} for $id.") extends Exception implements ContainerExceptionInterface {
                             public function __construct(string $message)
                             {
                                 parent::__construct($message);
@@ -122,7 +124,7 @@ class Container implements PsrContainerInterface
                     if ($type instanceof ReflectionNamedType) {
                         $parameters[] = $this->get($type->getName());
                     } else {
-                        throw new class("Union types are not supported for parameter \${$parameter->getName()} in $id.") extends Exception implements ContainerExceptionInterface {
+                        throw new class ("Union types are not supported for parameter \${$parameter->getName()} in $id.") extends Exception implements ContainerExceptionInterface {
                             public function __construct(string $message)
                             {
                                 parent::__construct($message);
@@ -134,7 +136,7 @@ class Container implements PsrContainerInterface
 
             return $reflector->newInstanceArgs($parameters);
         } catch (ReflectionException $e) {
-            throw new class("Error while resolving $id: " . $e->getMessage(), 0, $e) extends Exception implements ContainerExceptionInterface {
+            throw new class ("Error while resolving $id: " . $e->getMessage(), 0, $e) extends Exception implements ContainerExceptionInterface {
                 public function __construct(string $message, int $code, Throwable $previous)
                 {
                     parent::__construct($message, $code, $previous);
