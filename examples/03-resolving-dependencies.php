@@ -4,34 +4,33 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use PerfectApp\Container\Container;
 
-class Dependency
+class DatabaseConnection
 {
     public function __construct()
     {
+        echo "DatabaseConnection created\n";
     }
 }
 
-class DependentClass
+class UserRepository
 {
-    public Dependency $dependency;
+    public DatabaseConnection $db;
 
-    public function __construct(Dependency $dependency)
+    public function __construct(DatabaseConnection $db)
     {
-        $this->dependency = $dependency;
+        $this->db = $db;
+        echo "UserRepository created with Database dependency\n";
     }
 }
 
-// Set autowiring true
+// Autowiring enabled - no need to manually set dependencies
 $container = new Container(true);
 
-// No need to bind Dependency class
-// Resolve dependencies automatically
 try {
-    $instance = $container->get(DependentClass::class);
-    var_dump($instance);
-} catch (ReflectionException $e) {
-    var_dump($e);
+    // The container automatically resolves UserRepository and its DatabaseConnection dependency
+    $userRepo = $container->get(UserRepository::class);
+    echo "Successfully resolved dependency chain!\n";
+
 } catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }
-
-

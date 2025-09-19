@@ -6,12 +6,22 @@ use PerfectApp\Container\Container;
 
 $container = new Container();
 
-// Bind a closure
-$container->bind('greeting', function () {
-    return 'Hello, world!';
+// Set a closure (factory function)
+$container->set('timestamp', function () {
+    return time();
 });
 
-// Retrieve the result of the closure
-$greeting = $container->get('greeting');
+// Set a closure with dependencies
+$container->set('config', function () {
+    return [
+        'database' => [
+            'host' => 'localhost',
+            'name' => 'myapp'
+        ]
+    ];
+});
 
-echo $greeting; // Output: Hello, world!
+// Retrieve the results
+echo "Current timestamp: " . $container->get('timestamp') . "\n";
+$config = $container->get('config');
+echo "Database host: " . $config['database']['host'] . "\n";

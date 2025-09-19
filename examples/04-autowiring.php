@@ -4,39 +4,51 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use PerfectApp\Container\Container;
 
-interface SomeInterface
+interface MailerInterface
 {
-    //
+    public function send(string $to, string $subject);
 }
 
-class Implementation implements SomeInterface
+class SmtpMailer implements MailerInterface
 {
-    //
-}
-
-class DependentClass2
-{
-    public SomeInterface $dependency;
-
-    public function __construct(SomeInterface $dependency)
+    public function send(string $to, string $subject): true
     {
-        $this->dependency = $dependency;
+        echo "Sending email to $to with subject: $subject\n";
+        return true;
     }
 }
 
-$container = new Container();
+class NotificationService
+{
+    public MailerInterface $mailer;
 
-/*
- * Bind the implementation to the interface.
- * "bind" is deprecated. Use "set".
-*/
-$container->bind(SomeInterface::class, Implementation::class);
-$container->set('DependentClass2', DependentClass2::class);
+    public function __construct(MailerInterface $mailer)
+    {
+        $this->mailer = $mailer;
+    }
 
-// Resolve dependencies automatically
-try {
-    $instance = $container->get(DependentClass2::class);
-    var_dump($instance);
-} catch (ReflectionException|Exception $e) {
+    public function notify(string $email, string $message)
+    {
+        return $this->mailer->send($email, "Notification: $message");
+    }
 }
 
+$container = new Container(true);
+
+// The fix allows this to work: interface bound to concrete class
+$container->set(MailerInterface::class, SmtpMailer::class);
+
+try {
+    // Container will automatically:
+    // 1. Detect NotificationService needs MailerInterface
+    // 2. Find that MailerInterface is set to SmtpMailer
+    // 3. Build SmtpMailer instance (thanks to the fix)
+    // 4. Inject it into NotificationService
+    $service = $container->get(NotificationService::class);
+
+    // Test it works
+    $service->notify('user@example.com', 'Your account was created!');
+
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+}

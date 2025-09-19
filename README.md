@@ -4,9 +4,12 @@ Perfect Container PSR-11 is a lightweight, PSR-11-compliant dependency injection
 
 ## Features
 
-- Implements `Psr\Container\ContainerInterface`
-- Supports autowiring to resolve dependencies automatically
-- Allows manual bindings for non-autowirable classes or custom implementations
+- **PSR-11 Compliant**: Implements `Psr\Container\ContainerInterface`
+- **Smart Autowiring**: Automatically resolves class dependencies via reflection
+- **Dual Mode Operation**: Supports both autowiring-enabled and explicit-only modes
+- **Intelligent Resolution**: Automatically converts class name strings to instances when retrieved
+- **Factory Support**: Closure factories for on-demand service creation
+- **Interface Binding**: Map interfaces to concrete implementations
 
 ---
 
@@ -15,7 +18,7 @@ Perfect Container PSR-11 is a lightweight, PSR-11-compliant dependency injection
 Download the library and include it in your project using your preferred method. If using Composer:
 
 ```bash
-composer require perfectapp/perfect-container-psr-11
+  composer require perfectapp/perfect-container-psr-11
 ```
 
 ---
@@ -27,67 +30,75 @@ composer require perfectapp/perfect-container-psr-11
 ```php
 use PerfectApp\Container\Container;
 
-// Create a new container instance with autowiring enabled
-autowiring = true;
-$container = new Container($autowiring);
+// Create a new container instance with autowiring enabled (default)
+$container = new Container(true);
+
+// Or with autowiring disabled (explicit registration only)
+$container = new Container(false);
 ```
 
-### Binding Dependencies
+### Registering Dependencies
 
-#### Bind an Instance
+#### Register a Class Name (Automatically Instantiated)
 
 ```php
-$container->set(SomeClass::class, new SomeClass());
+// The container will automatically instantiate FileLogger when retrieved
+$container->set(LoggerInterface::class, FileLogger::class);
 ```
 
-#### Bind a Closure
+#### Register a Ready-Made Instance
 
 ```php
-$container->bind(SomeInterface::class, function (Container $container) {
-    return new SomeImplementation($container->get(Dependency::class));
+$container->set('database', new PDO('mysql:host=localhost;dbname=test', 'user', 'pass'));
+```
+
+#### Register a Closure Factory
+
+```php
+$container->set('config', function () {
+    return [
+        'database_host' => 'localhost',
+        'database_name' => 'my_database'
+    ];
 });
 ```
 
-#### Bind a Value
+#### Register a Simple Value
 
 ```php
-$container->bind('config', [
-    'database_host' => 'localhost',
-    'database_name' => 'my_database'
-]);
+$container->set('app.version', '1.0.0');
 ```
 
 ### Resolving Dependencies
 
-#### Autowired Resolution
-
-If autowiring is enabled, dependencies will be resolved automatically:
+#### Autowired Resolution (When Enabled)
 
 ```php
-$instance = $container->get(SomeClass::class);
+// Automatically resolves dependencies via reflection
+$service = $container->get(UserService::class);
 ```
 
-#### Check if a Binding Exists
+#### Manual Resolution
+
+```php
+$config = $container->get('app.version');
+```
+
+#### Check if a Entry Exists
 
 ```php
 if ($container->has(SomeClass::class)) {
-    echo 'Binding exists!';
+    echo 'Entry exists!';
 }
 ```
-
 ---
 
-## Exception Handling
+## Key Behaviors
 
-### Not Found
-
-If a dependency cannot be found, a `Psr\Container\NotFoundExceptionInterface` is thrown.
-
-### Container Error
-
-For any other errors during resolution, a `Psr\Container\ContainerExceptionInterface` is thrown.
-
----
+* Class Name Strings: When you set() a class name string, get() returns an instance of that class
+* Objects: When you set() an object, get() returns that exact object
+* Closures: When you set() a closure, get() executes it and returns the result
+* Other Values: When you set() any other value, get() returns that value directly
 
 ## Example
 
@@ -119,13 +130,31 @@ class UserService {
 
 $container = new Container(true);
 
-// Binding a specific logger implementation
-$container->bind(Logger::class, FileLogger::class);
+// Bind interface to implementation (returns FileLogger instance)
+$container->set(Logger::class, FileLogger::class);
 
-// Resolving the UserService
+// Resolve the UserService with automatic dependency injection
 $userService = $container->get(UserService::class);
 $userService->createUser('JohnDoe');
 ```
+
+
+
+## Exception Handling
+
+### Not Found Exception
+
+If a dependency cannot be found, a `Psr\Container\NotFoundExceptionInterface` is thrown.
+
+### Container Exception
+
+For any other errors during resolution, a `Psr\Container\ContainerExceptionInterface` is thrown.
+
+---
+
+## Versioning
+
+This project follows Semantic Versioning. Current version: 0.2.0
 
 ---
 

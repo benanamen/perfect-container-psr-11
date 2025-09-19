@@ -4,33 +4,44 @@ use PerfectApp\Container\Container;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Test the container without autowiring
+// Test 1: Basic value storage without autowiring
+echo "=== Test 1: Basic Values (Autowiring OFF) ===\n";
 $container = new Container(false);
-$container->set('foo', 'bar');
+$container->set('app.version', '1.0.0');
+$container->set('app.environment', 'development');
 
-try {
-    echo $container->get('foo');
-} catch (ReflectionException|Exception $e) {
-} // Output: bar
+echo "Version: " . $container->get('app.version') . "\n";
+echo "Environment: " . $container->get('app.environment') . "\n\n";
 
-
-$container->bind('biz', 'baz');
-try {
-    echo $container->get('biz');
-} catch (ReflectionException|Exception $e) {
-} // Output: baz
-
-// Test the container with autowiring
+// Test 2: Autowiring with class resolution
+echo "=== Test 2: Autowiring (Autowiring ON) ===\n";
 $container = new Container(true);
 
 class SampleClass
 {
-    public string $prop = 'Hello';
+    public string $message = 'Hello from SampleClass!';
 }
 
-try {
-    $instance = $container->get('SampleClass');
-    echo $instance->prop; // Output: Hello
-} catch (ReflectionException|Exception $e) {
+$instance = $container->get(SampleClass::class);
+echo $instance->message . "\n\n";
+
+// Test 3: Interface binding with the fix
+echo "=== Test 3: Interface Binding ===\n";
+
+interface LoggerInterface
+{
+    public function log(string $message);
 }
 
+class FileLogger implements LoggerInterface
+{
+    public function log(string $message)
+    {
+        echo "FILE LOG: $message\n";
+    }
+}
+
+// The fix makes this work correctly - string is resolved to class instance
+$container->set(LoggerInterface::class, FileLogger::class);
+$logger = $container->get(LoggerInterface::class);
+$logger->log('This works!');
